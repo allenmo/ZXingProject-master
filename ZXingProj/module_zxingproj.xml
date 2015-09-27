@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="module_zxingproj" default="compile.module.zxingproj">
+  <dirname property="module.zxingproj.basedir" file="${ant.file.module_zxingproj}"/>
+  
+  <property name="module.jdk.home.zxingproj" value="${jdk.home.android_api_19_platform}"/>
+  <property name="module.jdk.bin.zxingproj" value="${jdk.bin.android_api_19_platform}"/>
+  <property name="module.jdk.classpath.zxingproj" value="jdk.classpath.android_api_19_platform"/>
+  
+  <property name="compiler.args.zxingproj" value="-encoding GBK -source 8 ${compiler.args}"/>
+  
+  <property name="zxingproj.output.dir" value="${module.zxingproj.basedir}/../out/production/ZXingProj"/>
+  <property name="zxingproj.testoutput.dir" value="${module.zxingproj.basedir}/../out/test/ZXingProj"/>
+  
+  <path id="zxingproj.module.bootclasspath">
+    <!-- Paths to be included in compilation bootclasspath -->
+  </path>
+  
+  <path id="zxingproj.module.production.classpath">
+    <path refid="${module.jdk.classpath.zxingproj}"/>
+    <path refid="library.zxing.classpath"/>
+  </path>
+  
+  <path id="zxingproj.runtime.production.module.classpath">
+    <pathelement location="${zxingproj.output.dir}"/>
+    <path refid="library.zxing.classpath"/>
+  </path>
+  
+  <path id="zxingproj.module.classpath">
+    <path refid="${module.jdk.classpath.zxingproj}"/>
+    <pathelement location="${zxingproj.output.dir}"/>
+    <path refid="library.zxing.classpath"/>
+  </path>
+  
+  <path id="zxingproj.runtime.module.classpath">
+    <pathelement location="${zxingproj.testoutput.dir}"/>
+    <pathelement location="${zxingproj.output.dir}"/>
+    <path refid="library.zxing.classpath"/>
+  </path>
+  
+  
+  <patternset id="excluded.from.module.zxingproj">
+    <patternset refid="ignored.files"/>
+  </patternset>
+  
+  <patternset id="excluded.from.compilation.zxingproj">
+    <patternset refid="excluded.from.module.zxingproj"/>
+  </patternset>
+  
+  <path id="zxingproj.module.sourcepath">
+    <dirset dir="${module.zxingproj.basedir}">
+      <include name="src"/>
+      <include name="gen"/>
+    </dirset>
+  </path>
+  
+  
+  <target name="compile.module.zxingproj" depends="compile.module.zxingproj.production,compile.module.zxingproj.tests" description="Compile module ZXingProj"/>
+  
+  <target name="compile.module.zxingproj.production" depends="register.custom.compilers" description="Compile module ZXingProj; production classes">
+    <mkdir dir="${zxingproj.output.dir}"/>
+    <javac2 destdir="${zxingproj.output.dir}" debug="${compiler.debug}" nowarn="${compiler.generate.no.warnings}" memorymaximumsize="${compiler.max.memory}" fork="true" executable="${module.jdk.bin.zxingproj}/javac">
+      <compilerarg line="${compiler.args.zxingproj}"/>
+      <bootclasspath refid="zxingproj.module.bootclasspath"/>
+      <classpath refid="zxingproj.module.production.classpath"/>
+      <src refid="zxingproj.module.sourcepath"/>
+      <patternset refid="excluded.from.compilation.zxingproj"/>
+    </javac2>
+    
+    <copy todir="${zxingproj.output.dir}">
+      <fileset dir="${module.zxingproj.basedir}/src">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+      <fileset dir="${module.zxingproj.basedir}/gen">
+        <patternset refid="compiler.resources"/>
+        <type type="file"/>
+      </fileset>
+    </copy>
+  </target>
+  
+  <target name="compile.module.zxingproj.tests" depends="register.custom.compilers,compile.module.zxingproj.production" description="compile module ZXingProj; test classes" unless="skip.tests"/>
+  
+  <target name="clean.module.zxingproj" description="cleanup module">
+    <delete dir="${zxingproj.output.dir}"/>
+    <delete dir="${zxingproj.testoutput.dir}"/>
+  </target>
+</project>
