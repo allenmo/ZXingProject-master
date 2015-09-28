@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.TypedValue;
+import android.util.Xml;
 import android.widget.ImageView;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
@@ -13,7 +14,12 @@ import android.widget.TextView;
 import com.dtr.zxing.R;
 import com.dtr.zxing.decode.DecodeThread;
 
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -80,9 +86,11 @@ public class ResultActivity extends Activity {
 						xml.append("</imageQuery>\n");
 						//Log.v("allen:xml is", xml.toString());
 						try{
-							Log.v("allen: in thread->try", "hi->1");
+							//Log.v("allen: in thread->try", "hi->1");
 							byte[] xmlbyte = xml.toString().getBytes("UTF-8");
-							URL url = new URL("http://192.168.1.101/webel/fixture.php?fu=imageQuery");
+							//URL url = new URL("http://192.168.1.101/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
+							URL url = new URL("http://192.168.1.4/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
+							//Log.v("allen:URL is", url.toString());
 							HttpURLConnection conn = (HttpURLConnection)url.openConnection();
 							conn.setConnectTimeout(5000);
 							conn.setDoOutput(true);
@@ -95,7 +103,7 @@ public class ResultActivity extends Activity {
 							conn.setRequestProperty("Content-Type", "Text/xml; charset=UTF-8");
 							conn.setRequestProperty("X-ClientType", "2");
 							conn.getOutputStream().write(xmlbyte);
-							Log.v("allen: in thread->try", "hi->2");
+							//Log.v("allen: in thread->try", "hi->2");
 							conn.getOutputStream().flush();
 							conn.getOutputStream().close();
 
@@ -113,6 +121,36 @@ public class ResultActivity extends Activity {
 							String string = out.toString("UTF-8");
 							Log.v("allen: return xml is", string);
 							out.close();
+
+							// xml½âÎö
+							String image_exist = null;
+							XmlPullParser parser = Xml.newPullParser();
+							Log.v("allen: in xml parser", "hi->3");
+							try{
+								//parser.setInput(new ByteArrayInputStream(string.substring(1).getBytes("UTF-8")), "UTF-8");
+								parser.setInput(is,"UTF-8");
+								int eventType = parser.getEventType();
+								Log.v("allen: in xml parser", "hi->4");
+								while (eventType != XmlPullParser.END_DOCUMENT){
+									Log.v("allen: in xml parser", "hi->5");
+									Log.v("allen:loc1,eventType is", valueOf(eventType));
+									if(eventType == XmlPullParser.START_TAG){
+										Log.v("allen: in xml parser", "hi->6");
+										if("image_exist".equals(parser.getName())){
+											image_exist = parser.nextText();
+											Log.v("allen: image_exist is", image_exist);
+										}
+									}
+									eventType = parser.next();
+									Log.v("allen:loc2,eventType is", valueOf(eventType));
+								}
+							}catch (XmlPullParserException e){
+								e.printStackTrace();
+								System.out.println(e);
+							}catch (IOException e){
+								e.printStackTrace();
+								System.out.println(e);
+							}
 						}catch (Exception e){
 							System.out.println(e);
 						}
