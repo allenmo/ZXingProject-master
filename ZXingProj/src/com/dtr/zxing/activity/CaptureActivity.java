@@ -190,7 +190,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 		bundle.putInt("width", mCropRect.width());
 		bundle.putInt("height", mCropRect.height());
 		bundle.putString("result", rawResult.getText());
-
+		Log.v("allen:", "before ResultActivity start");
 		startActivity(new Intent(CaptureActivity.this, ResultActivity.class).putExtras(bundle));
 	}
 

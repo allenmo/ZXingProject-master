@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Log;
 import android.util.TypedValue;
 import android.widget.ImageView;
 import android.widget.LinearLayout.LayoutParams;
@@ -11,6 +12,13 @@ import android.widget.TextView;
 
 import com.dtr.zxing.R;
 import com.dtr.zxing.decode.DecodeThread;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+import static java.lang.String.valueOf;
 
 public class ResultActivity extends Activity {
 
@@ -22,6 +30,7 @@ public class ResultActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_result);
 
+		Log.v("allen:", "after ResultActivity start");
 		Bundle extras = getIntent().getExtras();
 
 		mResultImage = (ImageView) findViewById(R.id.result_image);
@@ -38,18 +47,84 @@ public class ResultActivity extends Activity {
 			
 			mResultImage.setLayoutParams(lps);
 
-			String result = extras.getString("result");
-			mResultText.setText(result);
-
 			Bitmap barcode = null;
 			byte[] compressedBitmap = extras.getByteArray(DecodeThread.BARCODE_BITMAP);
 			if (compressedBitmap != null) {
 				barcode = BitmapFactory.decodeByteArray(compressedBitmap, 0, compressedBitmap.length, null);
 				// Mutable copy:
+				//barcode = barcode.copy(Bitmap.Config.ALPHA_8, true);
+				//barcode = barcode.copy(Bitmap.Config.ARGB_4444, true);
+				//barcode = barcode.copy(Bitmap.Config.ARGB_8888, true);
 				barcode = barcode.copy(Bitmap.Config.RGB_565, true);
 			}
 
 			mResultImage.setImageBitmap(barcode);
+			// string------------------------------
+			String result = extras.getString("result");
+			mResultText.setText(result);
+			//Log.v("allen:", result);
+			String[] resultArr = result.split(";");
+			//Log.v("allen:len of resultArr", valueOf(resultArr.length));
+			if(resultArr.length == 6){
+				// new thread to get xml for fn=imageQuery------------------------------
+				Thread threadGetXml = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						Log.v("allen: in threadGetXml", "Hi");
+						String sn = resultArr[5];
+						//Log.v("allen: SN is", sn);
+						StringBuilder xml = new StringBuilder();
+						xml.append("<?xml version=\"1.0\" endcoding=\"UTF-8\"?>\n");
+						xml.append("<imageQuery>\n");
+						xml.append("<sn>" + sn + "</sn>\n");
+						xml.append("</imageQuery>\n");
+						//Log.v("allen:xml is", xml.toString());
+						try{
+							Log.v("allen: in thread->try", "hi->1");
+							byte[] xmlbyte = xml.toString().getBytes("UTF-8");
+							URL url = new URL("http://192.168.1.101/webel/fixture.php?fu=imageQuery");
+							HttpURLConnection conn = (HttpURLConnection)url.openConnection();
+							conn.setConnectTimeout(5000);
+							conn.setDoOutput(true);
+							conn.setDoInput(true);
+							conn.setUseCaches(false);
+							conn.setRequestMethod("POST");
+							conn.setRequestProperty("Connection", "Keep-Alive");//长连接
+							conn.setRequestProperty("Charset", "UTF-8");
+							conn.setRequestProperty("Content-Length", String.valueOf(xmlbyte.length));
+							conn.setRequestProperty("Content-Type", "Text/xml; charset=UTF-8");
+							conn.setRequestProperty("X-ClientType", "2");
+							conn.getOutputStream().write(xmlbyte);
+							Log.v("allen: in thread->try", "hi->2");
+							conn.getOutputStream().flush();
+							conn.getOutputStream().close();
+
+							if(conn.getResponseCode() != 200)
+								throw	new RuntimeException("请求url失败");
+
+							InputStream is = conn.getInputStream();//获取返回数据
+
+							ByteArrayOutputStream out = new ByteArrayOutputStream();
+							byte[] buf = new byte[1024];
+							int len;
+							while((len = is.read(buf)) != -1){
+								out.write(buf, 0, len);
+							}
+							String string = out.toString("UTF-8");
+							Log.v("allen: return xml is", string);
+							out.close();
+						}catch (Exception e){
+							System.out.println(e);
+						}
+
+					}
+				});
+				threadGetXml.start();
+
+
+
+			}
+
 		}
 	}
 }
