@@ -3,5 +3,7 @@
     <string name="app_name">ZXingProj</string>
     <string name="comm_msg_nosdcard">SD卡不可用，无法拍保存照片！</string>
     <string name="button">机架拍照</string>
+    <string name="comm_msg_get_photo_failure">Get photo failure</string>
+    <string name="comm_msg_get_photo_sucess">Get photo sucess!</string>
 
 </resources>

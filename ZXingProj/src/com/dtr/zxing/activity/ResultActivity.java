@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -45,6 +46,7 @@ public class ResultActivity extends Activity implements View.OnClickListener {
 	private ImageView mResultImage;
 	private TextView mResultText;
 	private Button button;
+	private ImageView fixtureImage;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +61,7 @@ public class ResultActivity extends Activity implements View.OnClickListener {
 		mResultText = (TextView) findViewById(R.id.result_text);
 		button = (Button)findViewById(R.id.button);
 		button.setOnClickListener(this);
+		fixtureImage =(ImageView)findViewById(R.id.fixtureImage);
 
 		// ---------------------------------------------------------------------------------------
 		if (null != extras) {
@@ -102,9 +105,9 @@ public class ResultActivity extends Activity implements View.OnClickListener {
 						xml.append("</imageQuery>\n");
 						try{
 							byte[] xmlbyte = xml.toString().getBytes("UTF-8");
-							URL url = new URL("http://192.168.6.9/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
+							//URL url = new URL("http://192.168.6.9/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
 							//URL url = new URL("http://192.168.1.101/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
-							//URL url = new URL("http://192.168.1.4/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
+							URL url = new URL("http://192.168.1.4/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
 							HttpURLConnection conn = (HttpURLConnection)url.openConnection();
 							conn.setConnectTimeout(5000);
 							conn.setDoOutput(true);
@@ -251,6 +254,24 @@ public class ResultActivity extends Activity implements View.OnClickListener {
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data){
 		Log.v("allen: in ", "onActivityResult");
+		Bitmap photo = null;
+		Uri uri = data.getData();
+		if(uri != null){
+			photo = BitmapFactory.decodeFile(uri.getPath());
+			Log.v("allen:get photo","1");
+			//Toast.makeText(ResultActivity.this, getString(R.string.comm_msg_get_photo_sucess) + "1", Toast.LENGTH_LONG).show();
+		}
+		if(photo == null){
+			Bundle bundle = data.getExtras();
+			if(bundle != null){
+				Log.v("allen:get photo","2");
+				photo = (Bitmap)bundle.get("data");
+				fixtureImage.setImageBitmap(photo);
+				//Toast.makeText(ResultActivity.this, getString(R.string.comm_msg_get_photo_sucess) + "2", Toast.LENGTH_LONG).show();
+			}else{
+				Toast.makeText(ResultActivity.this, getString(R.string.comm_msg_get_photo_failure),Toast.LENGTH_LONG).show();
+			}
+		}
 	}
 
 }
