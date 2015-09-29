@@ -1,9 +1,11 @@
 package com.dtr.zxing.activity;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -13,6 +15,7 @@ import android.util.Xml;
 import android.widget.ImageView;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.dtr.zxing.R;
 import com.dtr.zxing.decode.DecodeThread;
@@ -206,6 +209,14 @@ public class ResultActivity extends Activity {
 					break;
 				case MSG_PICTURE_EXIST:
 					Log.v("allen:Picture", "exist");
+					String state = Environment.getExternalStorageState();
+					if(state.equals(Environment.MEDIA_MOUNTED)){
+						Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
+						startActivityForResult(intent, 1);
+					}else{
+						Toast.makeText(ResultActivity.this, R.string.comm_msg_nosdcard, Toast.LENGTH_LONG).show();
+					}
+					Log.v("allen:state",state);
 					break;
 				case MSG_PICTURE_NOT_EXIST:
 					Log.v("allen:Picture", "NOT exist");
@@ -218,6 +229,11 @@ public class ResultActivity extends Activity {
 					break;
 			}
 		}
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data){
+		Log.v("allen: in ", "onActivityResult");
 	}
 
 }

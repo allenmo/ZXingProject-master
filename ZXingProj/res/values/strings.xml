@@ -1,5 +1,6 @@
 <resources>
 
     <string name="app_name">ZXingProj</string>
+    <string name="comm_msg_nosdcard">SD卡不可用，无法拍保存照片！</string>
 
 </resources>
