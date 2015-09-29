@@ -4,6 +4,9 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.util.TypedValue;
 import android.util.Xml;
@@ -27,12 +30,19 @@ import java.net.URL;
 import static java.lang.String.valueOf;
 
 public class ResultActivity extends Activity {
-
+	private static final int MSG_SN_NOT_EXIST = 1;
+	private static final int MSG_SN_EXIST = 2;
+	private static final int MSG_PICTURE_EXIST = 3;
+	private static final int MSG_PICTURE_NOT_EXIST = 4;
+	private static final int MSG_DOWNLOAD_PICTURE = 5;
+	private static final int MSG_UPLOAD_PICTURE = 6;
+	private static final int MSG_UPDATE_PICTURE = 7;
 	private ImageView mResultImage;
 	private TextView mResultText;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		MyHandler myHandler = new MyHandler();
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_result);
 
@@ -68,9 +78,7 @@ public class ResultActivity extends Activity {
 			// string------------------------------
 			String result = extras.getString("result");
 			mResultText.setText(result);
-			//Log.v("allen:", result);
 			String[] resultArr = result.split(";");
-			//Log.v("allen:len of resultArr", valueOf(resultArr.length));
 			if(resultArr.length == 6){
 				// new thread to get xml for fn=imageQuery------------------------------
 				Thread threadGetXml = new Thread(new Runnable() {
@@ -78,19 +86,16 @@ public class ResultActivity extends Activity {
 					public void run() {
 						Log.v("allen: in threadGetXml", "Hi");
 						String sn = resultArr[5];
-						//Log.v("allen: SN is", sn);
 						StringBuilder xml = new StringBuilder();
-						xml.append("<?xml version=\"1.0\" endcoding=\"UTF-8\"?>\n");
+						xml.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 						xml.append("<imageQuery>\n");
 						xml.append("<sn>" + sn + "</sn>\n");
 						xml.append("</imageQuery>\n");
-						//Log.v("allen:xml is", xml.toString());
 						try{
-							//Log.v("allen: in thread->try", "hi->1");
 							byte[] xmlbyte = xml.toString().getBytes("UTF-8");
+							URL url = new URL("http://192.168.6.9/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
 							//URL url = new URL("http://192.168.1.101/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
-							URL url = new URL("http://192.168.1.4/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
-							//Log.v("allen:URL is", url.toString());
+							//URL url = new URL("http://192.168.1.4/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
 							HttpURLConnection conn = (HttpURLConnection)url.openConnection();
 							conn.setConnectTimeout(5000);
 							conn.setDoOutput(true);
@@ -103,7 +108,6 @@ public class ResultActivity extends Activity {
 							conn.setRequestProperty("Content-Type", "Text/xml; charset=UTF-8");
 							conn.setRequestProperty("X-ClientType", "2");
 							conn.getOutputStream().write(xmlbyte);
-							//Log.v("allen: in thread->try", "hi->2");
 							conn.getOutputStream().flush();
 							conn.getOutputStream().close();
 
@@ -123,34 +127,49 @@ public class ResultActivity extends Activity {
 							out.close();
 
 							// xml解析
-							String image_exist = null;
-							XmlPullParser parser = Xml.newPullParser();
-							Log.v("allen: in xml parser", "hi->3");
-							try{
-								//parser.setInput(new ByteArrayInputStream(string.substring(1).getBytes("UTF-8")), "UTF-8");
-								parser.setInput(is,"UTF-8");
-								int eventType = parser.getEventType();
-								Log.v("allen: in xml parser", "hi->4");
-								while (eventType != XmlPullParser.END_DOCUMENT){
-									Log.v("allen: in xml parser", "hi->5");
-									Log.v("allen:loc1,eventType is", valueOf(eventType));
-									if(eventType == XmlPullParser.START_TAG){
-										Log.v("allen: in xml parser", "hi->6");
-										if("image_exist".equals(parser.getName())){
-											image_exist = parser.nextText();
-											Log.v("allen: image_exist is", image_exist);
+							if(string.length()>0){
+								String image_exist = null;
+								String sn_exist = null;
+								XmlPullParser parser = Xml.newPullParser();
+								try{
+									parser.setInput(new ByteArrayInputStream(string.getBytes("UTF-8")), "UTF-8");
+									//parser.setInput(new ByteArrayInputStream(out.toByteArray()), "UTF-8");
+									//parser.setInput(is,"UTF-8");
+									int eventType = parser.getEventType();
+									while (eventType != XmlPullParser.END_DOCUMENT){
+										if(eventType == XmlPullParser.START_TAG){
+											if("sn_exist".equals(parser.getName())){
+												sn_exist = parser.nextText();
+												//Log.v("allen: sn_exist is", sn_exist);
+											}else if("image_exist".equals(parser.getName())){
+												image_exist = parser.nextText();
+												//Log.v("allen: image_exist is", image_exist);
+											}
 										}
+										eventType = parser.next();
 									}
-									eventType = parser.next();
-									Log.v("allen:loc2,eventType is", valueOf(eventType));
+									// 发送信息到MyHandler
+									Message msg = myHandler.obtainMessage();
+									if(sn_exist == "N"){
+										msg.what = MSG_SN_NOT_EXIST;
+										msg.obj = sn;
+									}else if(image_exist == "N"){
+										msg.what = MSG_PICTURE_NOT_EXIST;
+										msg.obj = sn;
+									}else {
+										msg.what = MSG_PICTURE_EXIST;
+										msg.obj = sn;
+									}
+									myHandler.sendMessage(msg);
+								}catch (XmlPullParserException e){
+									e.printStackTrace();
+									System.out.println(e);
+								}catch (IOException e){
+									e.printStackTrace();
+									System.out.println(e);
 								}
-							}catch (XmlPullParserException e){
-								e.printStackTrace();
-								System.out.println(e);
-							}catch (IOException e){
-								e.printStackTrace();
-								System.out.println(e);
 							}
+
 						}catch (Exception e){
 							System.out.println(e);
 						}
@@ -165,4 +184,40 @@ public class ResultActivity extends Activity {
 
 		}
 	}
+
+	class MyHandler extends Handler{
+		public MyHandler(){
+		}
+
+		public MyHandler(Looper L){
+
+		}
+
+		@Override
+		public void handleMessage(Message msg){
+			super.handleMessage(msg);
+			//此处可以更新UI
+			//Log.v("allen:in handleMeg","hi");
+			//Log.v("allen:what,obj", msg.what + "," + (String)msg.obj);
+			switch (msg.what){
+				case MSG_SN_NOT_EXIST:
+					break;
+				case MSG_SN_EXIST:
+					break;
+				case MSG_PICTURE_EXIST:
+					Log.v("allen:Picture", "exist");
+					break;
+				case MSG_PICTURE_NOT_EXIST:
+					Log.v("allen:Picture", "NOT exist");
+					break;
+				case MSG_DOWNLOAD_PICTURE:
+					break;
+				case MSG_UPLOAD_PICTURE:
+					break;
+				case MSG_UPDATE_PICTURE:
+					break;
+			}
+		}
+	}
+
 }
