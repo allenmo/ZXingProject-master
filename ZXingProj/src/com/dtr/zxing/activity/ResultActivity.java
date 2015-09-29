@@ -12,6 +12,8 @@ import android.os.Message;
 import android.util.Log;
 import android.util.TypedValue;
 import android.util.Xml;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
@@ -32,7 +34,7 @@ import java.net.URL;
 
 import static java.lang.String.valueOf;
 
-public class ResultActivity extends Activity {
+public class ResultActivity extends Activity implements View.OnClickListener {
 	private static final int MSG_SN_NOT_EXIST = 1;
 	private static final int MSG_SN_EXIST = 2;
 	private static final int MSG_PICTURE_EXIST = 3;
@@ -42,6 +44,7 @@ public class ResultActivity extends Activity {
 	private static final int MSG_UPDATE_PICTURE = 7;
 	private ImageView mResultImage;
 	private TextView mResultText;
+	private Button button;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +57,10 @@ public class ResultActivity extends Activity {
 
 		mResultImage = (ImageView) findViewById(R.id.result_image);
 		mResultText = (TextView) findViewById(R.id.result_text);
+		button = (Button)findViewById(R.id.button);
+		button.setOnClickListener(this);
 
+		// ---------------------------------------------------------------------------------------
 		if (null != extras) {
 			int width = extras.getInt("width");
 			int height = extras.getInt("height");
@@ -188,6 +194,17 @@ public class ResultActivity extends Activity {
 		}
 	}
 
+	@Override
+	public void onClick(View v) {
+		switch (v.getId()){
+			case R.id.button:
+				Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
+				startActivityForResult(intent, 1);
+				break;
+		}
+
+	}
+
 	class MyHandler extends Handler{
 		public MyHandler(){
 		}
@@ -211,8 +228,8 @@ public class ResultActivity extends Activity {
 					Log.v("allen:Picture", "exist");
 					String state = Environment.getExternalStorageState();
 					if(state.equals(Environment.MEDIA_MOUNTED)){
-						Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
-						startActivityForResult(intent, 1);
+						button.setVisibility(View.VISIBLE);
+
 					}else{
 						Toast.makeText(ResultActivity.this, R.string.comm_msg_nosdcard, Toast.LENGTH_LONG).show();
 					}
