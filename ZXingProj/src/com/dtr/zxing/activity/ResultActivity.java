@@ -1,6 +1,7 @@
 package com.dtr.zxing.activity;
 
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -10,12 +11,14 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.util.TypedValue;
 import android.util.Xml;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.LinearLayout.LayoutParams;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,11 +31,15 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
+import static java.lang.String.format;
 import static java.lang.String.valueOf;
 
 public class ResultActivity extends Activity implements View.OnClickListener {
@@ -47,6 +54,8 @@ public class ResultActivity extends Activity implements View.OnClickListener {
 	private TextView mResultText;
 	private Button button;
 	private ImageView fixtureImage;
+	private String filePath;
+	private File filePic;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -106,8 +115,8 @@ public class ResultActivity extends Activity implements View.OnClickListener {
 						try{
 							byte[] xmlbyte = xml.toString().getBytes("UTF-8");
 							//URL url = new URL("http://192.168.6.9/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
-							//URL url = new URL("http://192.168.1.101/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
-							URL url = new URL("http://192.168.1.4/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
+							URL url = new URL("http://192.168.1.101/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
+							//URL url = new URL("http://192.168.1.4/webel/fixture.php?fu=imageQuery&sid=" + valueOf(Math.random()));
 							HttpURLConnection conn = (HttpURLConnection)url.openConnection();
 							conn.setConnectTimeout(5000);
 							conn.setDoOutput(true);
@@ -201,11 +210,43 @@ public class ResultActivity extends Activity implements View.OnClickListener {
 	public void onClick(View v) {
 		switch (v.getId()){
 			case R.id.button:
-				Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
-				startActivityForResult(intent, 1);
+				Log.v("allen: button", "pressed");
+				String state = Environment.getExternalStorageState();
+				Log.v("allen:SD card state is",state);
+				if(state.equals(Environment.MEDIA_MOUNTED)){
+					Intent intent = new Intent("android.media.action.IMAGE_CAPTURE");
+					filePath = getFileName();
+					Log.v("allen:filePath is", filePath);
+					intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(new File(filePath)));
+					startActivityForResult(intent, 1);
+				}else{
+					Toast.makeText(ResultActivity.this, R.string.comm_msg_nosdcard, Toast.LENGTH_LONG).show();
+				}
 				break;
 		}
 
+	}
+
+	/*
+	 * 生成文件路径和文件名
+	 */
+	private String getFileName(){
+		String saveDir = Environment.getExternalStorageDirectory() + "/FixturePic";
+		File dir = new File(saveDir);
+		if(!dir.exists()){
+			dir.mkdir();
+		}
+		Date date = new Date();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+		String fileName = saveDir + "/" + formatter.format(date) + ".jpeg";
+		filePic = new File(fileName);
+		if(!filePic.exists()){
+			try{
+				filePic.createNewFile();
+			}catch (IOException e){
+			}
+		}
+		return  fileName;
 	}
 
 	class MyHandler extends Handler{
@@ -229,14 +270,7 @@ public class ResultActivity extends Activity implements View.OnClickListener {
 					break;
 				case MSG_PICTURE_EXIST:
 					Log.v("allen:Picture", "exist");
-					String state = Environment.getExternalStorageState();
-					if(state.equals(Environment.MEDIA_MOUNTED)){
-						button.setVisibility(View.VISIBLE);
-
-					}else{
-						Toast.makeText(ResultActivity.this, R.string.comm_msg_nosdcard, Toast.LENGTH_LONG).show();
-					}
-					Log.v("allen:state",state);
+					button.setVisibility(View.VISIBLE);
 					break;
 				case MSG_PICTURE_NOT_EXIST:
 					Log.v("allen:Picture", "NOT exist");
@@ -253,25 +287,65 @@ public class ResultActivity extends Activity implements View.OnClickListener {
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data){
-		Log.v("allen: in ", "onActivityResult");
+		if(requestCode == 0x1 && resultCode == this.RESULT_OK){
+			BitmapFactory.Options myoptions = new BitmapFactory.Options();
+			myoptions.inJustDecodeBounds = true;
+			BitmapFactory.decodeFile(filePic.getAbsolutePath(),myoptions);
+			int height =myoptions.outHeight*222/myoptions.outWidth;
+			myoptions.outWidth =222;
+			myoptions.outHeight=height;
+			myoptions.inJustDecodeBounds = false;
+			myoptions.inSampleSize = myoptions.outWidth/222;
+			myoptions.inPurgeable = true;
+			myoptions.inInputShareable = true;
+			myoptions.inPreferredConfig = Bitmap.Config.ARGB_4444;
+			myoptions.inScreenDensity = 80;
+			Bitmap bitmap = BitmapFactory.decodeFile(filePath,myoptions);
+			fixtureImage.setImageBitmap(bitmap);
+
+		}
+		/*Log.v("allen: in ", "onActivityResult");
 		Bitmap photo = null;
-		Uri uri = data.getData();
-		if(uri != null){
-			photo = BitmapFactory.decodeFile(uri.getPath());
-			Log.v("allen:get photo","1");
-			//Toast.makeText(ResultActivity.this, getString(R.string.comm_msg_get_photo_sucess) + "1", Toast.LENGTH_LONG).show();
+		Log.v("allen; filepath is", filePath);
+		while(!filePic.exists()){
+			Log.v("allen:file", filePic.getPath() + " not exist!");
 		}
-		if(photo == null){
-			Bundle bundle = data.getExtras();
-			if(bundle != null){
-				Log.v("allen:get photo","2");
-				photo = (Bitmap)bundle.get("data");
-				fixtureImage.setImageBitmap(photo);
-				//Toast.makeText(ResultActivity.this, getString(R.string.comm_msg_get_photo_sucess) + "2", Toast.LENGTH_LONG).show();
+		Log.v("allen:file", "exist!");
+		photo = BitmapFactory.decodeFile(filePath);
+		fixtureImage.setImageBitmap(photo);
+		Log.v("allen: setImageBitmap", "done");*/
+
+		/*if(data == null || "".equals(data)){
+			Log.v("allen:return", "with data is null");
+				return;
 			}else{
-				Toast.makeText(ResultActivity.this, getString(R.string.comm_msg_get_photo_failure),Toast.LENGTH_LONG).show();
-			}
-		}
+				Log.v("allen: in data not null", "ok");
+				Log.v("allen, return data is",data.toString());
+				Bitmap photo = null;
+				Uri uri = data.getData();
+				if (uri != null) {
+					Log.v("allen:get photo", "1");
+					//photo = BitmapFactory.decodeFile(uri.getPath());
+					photo = BitmapFactory.decodeFile(filePath);
+					fixtureImage.setImageBitmap(photo);
+					//Toast.makeText(ResultActivity.this, getString(R.string.comm_msg_get_photo_sucess) + "1", Toast.LENGTH_LONG).show();
+				}
+				if (photo == null) {
+					Bundle bundle = data.getExtras();
+					if (bundle != null) {
+						Log.v("allen:get photo", "2");
+						photo = (Bitmap) bundle.get("data");
+						Log.v("allen:width is", String.valueOf(photo.getWidth()));
+						Log.v("allen:hight is", String.valueOf(photo.getHeight()));
+						fixtureImage.setImageBitmap(photo);
+						//Toast.makeText(ResultActivity.this, getString(R.string.comm_msg_get_photo_sucess) + "2", Toast.LENGTH_LONG).show();
+					} else {
+						Toast.makeText(ResultActivity.this, getString(R.string.comm_msg_get_photo_failure), Toast.LENGTH_LONG).show();
+					}
+				}
+			}*/
+
+
 	}
 
 }
