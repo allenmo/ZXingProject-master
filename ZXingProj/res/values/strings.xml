@@ -1,10 +1,22 @@
 <resources>
 
-    <string name="app_name">ZXingProj</string>
+    <string name="app_name">机架</string>
     <string name="comm_msg_nosdcard">SD卡不可用，无法拍保存照片！</string>
-    <string name="button">机架拍照</string>
+    <string name="button">1. 机架拍照</string>
     <string name="comm_msg_get_photo_failure">Get photo failure</string>
     <string name="comm_msg_get_photo_sucess">Get photo sucess!</string>
-    <string name="button2">上传照片</string>
+    <string name="button2">2. 上传照片</string>
+    <string name="button2_upload">2. 上传照片</string>
+    <string name="button2_update">2. 更新图片</string>
+    <string name="buttonLedOn">背光</string>
+    <string name="buttonLedOff">背光</string>
+    <string name="TOAST_CAN_NOT_CONNECT_DB">连接服务器失败，请WIFI连接公司内网！</string>
+    <string name="SN_valid">New CheckBox</string>
+    <string name="sn_exist">条码有效</string>
+    <string name="sn_not_start">条码无效</string>
+    <string name="sn_not_exist">服务器中找不到该条码，无法上传图片</string>
+    <string name="upload_picture_success">图片上传成功</string>
+    <string name="upload_picture_fail">图片上传失败</string>
+    <string name="scanTextTip">将机架的二维码/条码放入框内，即可自动扫描</string>
 
 </resources>

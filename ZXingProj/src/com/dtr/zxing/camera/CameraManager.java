@@ -17,6 +17,7 @@
 package com.dtr.zxing.camera;
 
 import java.io.IOException;
+import java.security.Policy;
 
 import android.content.Context;
 import android.graphics.Point;
@@ -205,5 +206,26 @@ public class CameraManager {
 			return camera.getParameters().getPreviewSize();
 		}
 		return null;
+	}
+
+	public void openLight(){
+		Camera.Parameters parameters = camera.getParameters();
+		parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+		camera.setParameters(parameters);
+	}
+
+	public void offLight(){
+		Camera.Parameters parameters = camera.getParameters();
+		parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+		camera.setParameters(parameters);
+	}
+
+	public boolean getLight(){
+		Camera.Parameters parameters = camera.getParameters();
+		if(parameters.getFlashMode() == Camera.Parameters.FLASH_MODE_TORCH){
+			return true;
+		}else{
+			return false;
+		}
 	}
 }

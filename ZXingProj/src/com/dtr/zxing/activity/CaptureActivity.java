@@ -22,18 +22,24 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.hardware.Camera;
+import android.hardware.Camera.Parameters;
 import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.TranslateAnimation;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import com.dtr.zxing.R;
 import com.dtr.zxing.camera.CameraManager;
@@ -52,7 +58,7 @@ import com.google.zxing.Result;
  * @author dswitkin@google.com (Daniel Switkin)
  * @author Sean Owen
  */
-public final class CaptureActivity extends Activity implements SurfaceHolder.Callback {
+public final class CaptureActivity extends Activity implements SurfaceHolder.Callback ,View.OnClickListener{
 
 	private static final String TAG = CaptureActivity.class.getSimpleName();
 
@@ -78,6 +84,9 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 
 	private boolean isHasSurface = false;
 
+	private Button buttonBL;
+	private Camera camera;
+
 	@Override
 	public void onCreate(Bundle icicle) {
 		super.onCreate(icicle);
@@ -90,9 +99,15 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 		scanContainer = (RelativeLayout) findViewById(R.id.capture_container);
 		scanCropView = (RelativeLayout) findViewById(R.id.capture_crop_view);
 		scanLine = (ImageView) findViewById(R.id.capture_scan_line);
+		buttonBL = (Button)findViewById(R.id.toggleButton);
+
 
 		inactivityTimer = new InactivityTimer(this);
 		beepManager = new BeepManager(this);
+
+		buttonBL.setOnClickListener(this);
+
+
 
 		TranslateAnimation animation = new TranslateAnimation(Animation.RELATIVE_TO_PARENT, 0.0f, Animation.RELATIVE_TO_PARENT, 0.0f, Animation.RELATIVE_TO_PARENT, 0.0f, Animation.RELATIVE_TO_PARENT,
 				0.9f);
@@ -114,6 +129,9 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 		// wrong size and partially
 		// off screen.
 		cameraManager = new CameraManager(getApplication());
+		//buttonBL.setPressed(true);
+		//buttonBL.setPressed(false);
+		//buttonBL.setSelected(true);
 
 		handler = null;
 
@@ -127,7 +145,6 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 			// camera.
 			scanPreview.getHolder().addCallback(this);
 		}
-
 		inactivityTimer.onResume();
 	}
 
@@ -190,7 +207,7 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 		bundle.putInt("width", mCropRect.width());
 		bundle.putInt("height", mCropRect.height());
 		bundle.putString("result", rawResult.getText());
-		Log.v("allen:", "before ResultActivity start");
+		//Log.v("allen:", "before ResultActivity start");
 		startActivity(new Intent(CaptureActivity.this, ResultActivity.class).putExtras(bundle));
 	}
 
@@ -302,4 +319,21 @@ public final class CaptureActivity extends Activity implements SurfaceHolder.Cal
 		}
 		return 0;
 	}
+
+	@Override
+	public void onClick(View v) {
+		//Toast.makeText(CaptureActivity.this,"手电筒已打开！",Toast.LENGTH_LONG).show();
+		switch (v.getId()){
+			case R.id.toggleButton:
+				ToggleButton tb = (ToggleButton) v;
+				if(tb.isChecked()){
+					cameraManager.openLight();
+				}else {
+					cameraManager.offLight();
+				}
+				break;
+		}
+	}
+
+
 }

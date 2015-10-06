@@ -67,6 +67,31 @@
             android:layout_below="@id/capture_mask_top"
             android:layout_toRightOf="@id/capture_crop_view"
             android:background="@drawable/shadow" />
+
+        <ToggleButton
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/toggleButton"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:textOff="@string/buttonLedOn"
+            android:textOn="@string/buttonLedOff"
+            android:clickable="true" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceMedium"
+            android:text="@string/scanTextTip"
+            android:id="@+id/textView2"
+            android:layout_alignTop="@+id/capture_mask_bottom"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_alignRight="@+id/capture_mask_right"
+            android:layout_alignEnd="@+id/capture_mask_right"
+            android:gravity="center_horizontal"
+            android:layout_marginTop="10dp" />
+
     </RelativeLayout>
 
 </RelativeLayout>
